@@ -1,0 +1,28 @@
+---
+apiVersion: resource.k8s.io/v1alpha2
+kind: ResourceClaim
+metadata:
+  name: my-net
+spec:
+  resourceClassName: dra.networking
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ubuntu
+spec:
+  containers:
+    - name: ubuntu
+      image: localhost:5000/meridio-io/target-application:latest
+      securityContext:
+        privileged: false
+      command:
+        - sleep
+        - infinity
+      resources:
+        claims:
+        - name: my-net
+  resourceClaims:
+  - name: my-net
+    source:
+      resourceClaimName: my-net

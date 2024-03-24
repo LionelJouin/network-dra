@@ -1,0 +1,6 @@
+---
+apiVersion: resource.k8s.io/v1alpha2
+kind: ResourceClass
+metadata:
+  name: dra.networking
+driverName: dra.networking

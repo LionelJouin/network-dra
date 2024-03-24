@@ -1,0 +1,281 @@
+run:
+  deadline: 5m
+  tests: false
+
+issues:
+  include:
+    # revive exported should have comment or be unexported.
+    - EXC0012
+    # revive package comment should be of the form ...
+    - EXC0013
+
+linters-settings:
+  ireturn:
+    allow:
+    - BfdSpec
+    - StaticSpec
+    - BgpSpec
+    - error
+    - stdlib
+  funlen:
+    lines: 130
+  cyclop:
+    max-complexity: 12
+  godot:
+    exclude:
+      - "enum"
+  varnamelen:
+    ignore-names:
+      - ip
+      - id # identifier
+      - lb # load-balancer
+      - ns # network service
+      - wg # waiting group
+      - gw # gateway
+      - fd # file descriptor
+  revive:
+    rules:
+      - name: context-keys-type
+        disabled: false
+      - name: time-equal
+        disabled: false
+      - name: time-naming
+        disabled: false
+      - name: var-declaration
+        disabled: false
+      - name: unexported-return
+        disabled: false
+      - name: errorf
+        disabled: false
+      - name: blank-imports
+        disabled: false
+      - name: context-as-argument
+        disabled: false
+      - name: dot-imports
+        disabled: false
+      - name: error-return
+        disabled: false
+      - name: error-strings
+        disabled: false
+      - name: error-naming
+        disabled: false
+      - name: exported
+        disabled: false
+      - name: if-return
+        disabled: false
+      - name: increment-decrement
+        disabled: false
+      - name: var-naming
+        disabled: false
+      - name: package-comments
+        disabled: true
+      - name: range
+        disabled: false
+      - name: receiver-naming
+        disabled: false
+      - name: indent-error-flow
+        disabled: false
+      - name: argument-limit
+        disabled: false
+        arguments: [8]
+      # - name: cyclomatic # cyclop
+      #   disabled: false
+      #   arguments: [10]
+      # - name: max-public-structs
+      #   disabled: false
+      #   arguments: [5]
+      # - name: file-header
+      #   disabled: false
+      - name: empty-block
+        disabled: false
+      - name: superfluous-else
+        disabled: false
+      - name: confusing-naming
+        disabled: false
+      - name: get-return
+        disabled: false
+      - name: modifies-parameter
+        disabled: false
+      - name: confusing-results
+        disabled: false
+      - name: deep-exit
+        disabled: true
+      - name: unused-parameter
+        disabled: false
+      - name: unreachable-code
+        disabled: false
+      # - name: add-constant # mnd
+      #   disabled: false
+      - name: flag-parameter
+        disabled: false
+      - name: unnecessary-stmt
+        disabled: false
+      - name: struct-tag
+        disabled: false
+        arguments: ["json,inline","bson,outline,gnu"]
+      - name: modifies-value-receiver
+        disabled: false
+      - name: constant-logical-expr
+        disabled: false
+      - name: bool-literal-in-expr
+        disabled: false
+      - name: redefines-builtin-id
+        disabled: false
+      - name: function-result-limit
+        disabled: false
+        arguments: [3]
+      - name: imports-blacklist
+        disabled: false
+      - name: range-val-in-closure
+        disabled: false
+      - name: range-val-address
+        disabled: false
+      - name: waitgroup-by-value
+        disabled: false
+      - name: atomic
+        disabled: false
+      - name: empty-lines
+        disabled: false
+      # - name: line-length-limit # lll
+      #   disabled: false
+      - name: call-to-gc
+        disabled: false
+      - name: duplicated-imports
+        disabled: false
+      - name: import-shadowing
+        disabled: false
+      - name: bare-return
+        disabled: false
+      - name: unused-receiver
+        disabled: false
+      # - name: unhandled-error # errcheck
+      #   disabled: false
+      # - name: cognitive-complexity # gocognit
+      #   disabled: false
+      - name: string-of-int
+        disabled: false
+      - name: string-format
+        disabled: false
+      - name: early-return
+        disabled: false
+      - name: unconditional-recursion
+        disabled: false
+      - name: identical-branches
+        disabled: false
+      - name: defer
+        disabled: false
+      - name: unexported-naming
+        disabled: false
+      # - name: function-length # funlen
+      #   disabled: false
+      #   arguments: [75,50]
+      - name: nested-structs
+        disabled: false
+      - name: useless-break
+        disabled: false
+      # - name: banned-characters
+      #   disabled: false
+      - name: optimize-operands-order
+        disabled: false
+      - name: use-any
+        disabled: false
+      - name: datarace
+        disabled: false
+      - name: comment-spacings
+        disabled: false
+
+linters:
+  disable-all: true
+  enable:
+  - errcheck
+  - gosimple
+  - govet
+  - ineffassign
+  - staticcheck
+  - typecheck
+  - unused
+  - asasalint
+  - asciicheck
+  - bidichk
+  - bodyclose
+  - containedctx
+  - contextcheck
+  - cyclop
+  - decorder
+  # - depguard
+  - dogsled
+  - dupl
+  - dupword
+  - durationcheck
+  - errchkjson
+  - errname
+  - errorlint
+  - execinquery
+  - exhaustive
+  # - exhaustruct
+  - exportloopref
+  # - forbidigo
+  - forcetypeassert
+  - funlen
+  - gci
+  - ginkgolinter
+  - gocheckcompilerdirectives
+  # - gochecknoglobals
+  - gochecknoinits
+  - gocognit
+  - goconst
+  - gocritic
+  - gocyclo
+  - godot
+  # - godox
+  - goerr113
+  - gofmt
+  - gofumpt
+  # - goheader
+  - goimports
+  - gomnd
+  - gomoddirectives
+  - gomodguard
+  - goprintffuncname
+  - gosec
+  - grouper
+  - importas
+  - interfacebloat
+  - ireturn
+  - lll
+  - maintidx
+  - makezero
+  - misspell
+  - musttag
+  - nakedret
+  - nestif
+  - nilerr
+  - nilnil
+  - nlreturn
+  - noctx
+  - nolintlint
+  # - nonamedreturns
+  - nosprintfhostport
+  # - paralleltest
+  - prealloc
+  - predeclared
+  - promlinter
+  - reassign
+  - revive
+  - rowserrcheck
+  - sqlclosecheck
+  - stylecheck
+  - tagliatelle
+  - tenv
+  - testableexamples
+  - testpackage
+  - thelper
+  - tparallel
+  - unconvert
+  - unparam
+  - usestdlibvars
+  - varnamelen
+  - wastedassign
+  - whitespace
+  - wrapcheck
+  - wsl

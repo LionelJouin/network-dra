@@ -1,0 +1,5 @@
+apiVersion: v2
+name: Network-DRA
+description: Network-DRA
+version: 0.0.1
+appVersion: "v1alpha1"

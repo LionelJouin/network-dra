@@ -1,0 +1,53 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: network-dra-plugin
+  namespace: default
+  labels:
+    app: network-dra-plugin
+spec:
+  selector:
+    matchLabels:
+      app: network-dra-plugin
+  template:
+    metadata:
+      labels:
+        app: network-dra-plugin
+    spec:
+      containers:
+      - name: network-dra-plugin
+        image: localhost:5000/network-dra/network-dra-plugin:latest
+        imagePullPolicy: Always
+        command:
+        - ./network-dra-plugin
+        args:
+        - "run"
+        - "--driver-plugin-path=/var/lib/kubelet/plugins/"
+        - "--plugin-registration-path=/var/lib/kubelet/plugins_registry/"
+        - "--cdi-root=/var/run/cdi"
+        - "--node-name=$(NODE_NAME)"
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: plugins-registry
+          mountPath: /var/lib/kubelet/plugins_registry
+        - name: plugins
+          mountPath: /var/lib/kubelet/plugins
+        - name: cdi
+          mountPath: /var/run/cdi
+      volumes:
+      - name: plugins-registry
+        hostPath:
+          path: /var/lib/kubelet/plugins_registry
+      - name: plugins
+        hostPath:
+          path: /var/lib/kubelet/plugins
+      - name: cdi
+        hostPath:
+          path: /var/run/cdi
