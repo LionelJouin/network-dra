@@ -1,0 +1,12 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: network-dra-cluster-role
+rules:
+- apiGroups:
+  - ""
+  - resource.k8s.io
+  - networkattachements.dra.networking
+  resources: ["*"]
+  verbs: ["*"]

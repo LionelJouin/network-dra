@@ -1,0 +1,27 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: network-dra-controller
+  labels:
+    app: network-dra-controller
+spec:
+  selector:
+    matchLabels:
+      app: network-dra-controller
+  template:
+    metadata:
+      labels:
+        app: network-dra-controller
+    spec:
+      serviceAccountName: network-dra-service-account
+      containers:
+      - name: network-dra-controller
+        image: localhost:5000/network-dra/network-dra-controller:latest
+        imagePullPolicy: Always
+        command:
+        - ./network-dra-controller
+        args:
+        - run
+        securityContext:
+          privileged: true

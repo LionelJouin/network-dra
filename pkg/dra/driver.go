@@ -17,6 +17,8 @@ type Driver struct {
 	DriverPluginPath       string
 	PluginRegistrationPath string
 	CDIRoot                string
+
+	cdi *CDIHandler
 }
 
 func (d *Driver) Start(ctx context.Context) error {
@@ -25,17 +27,9 @@ func (d *Driver) Start(ctx context.Context) error {
 		return fmt.Errorf("failed to MkdirAll DriverPluginPath %v: %w", d.DriverPluginPath, err)
 	}
 
-	info, err := os.Stat(d.CDIRoot)
-	switch {
-	case err != nil && os.IsNotExist(err):
-		err := os.MkdirAll(d.CDIRoot, 0750)
-		if err != nil {
-			return fmt.Errorf("failed to MkdirAll CDIRoot %v: %w", d.CDIRoot, err)
-		}
-	case err != nil:
-		return err
-	case !info.IsDir():
-		return fmt.Errorf("path for cdi file generation is not a directory: %w", err)
+	d.cdi, err = NewCDIHandler(d.CDIRoot)
+	if err != nil {
+		return fmt.Errorf("failed to create cdi handler: %w", err)
 	}
 
 	driverPluginPath := filepath.Join(d.DriverPluginPath, "plugin.sock")
@@ -91,6 +85,16 @@ func (d *Driver) nodePrepareResource(ctx context.Context, claim *drapbv1.Claim) 
 	var err error
 	var prepared []string
 	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		err = d.cdi.CreateCDISpecFile(claim.Uid)
+		if err != nil {
+			return fmt.Errorf("error CreateCDISpecFile for claim %v: %v", claim.Uid, err)
+		}
+
+		prepared, err = d.cdi.GetClaimDevices(claim.Uid)
+		if err != nil {
+			return fmt.Errorf("error GetClaimDevices for claim %v: %v", claim.Uid, err)
+		}
+
 		// prepared, err = d.prepare(ctx, claim.Uid)
 		// if err != nil {
 		// 	return fmt.Errorf("error allocating devices for claim '%v': %v", claim.Uid, err)

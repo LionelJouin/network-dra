@@ -15,6 +15,7 @@ type runOptions struct {
 	driverPluginSocketPath string
 	pluginRegistrationPath string
 	cdiRoot                string
+	nodeName               string
 }
 
 func newCmdRun() *cobra.Command {
@@ -51,7 +52,7 @@ func newCmdRun() *cobra.Command {
 	)
 
 	cmd.Flags().StringVar(
-		&runOpts.cdiRoot,
+		&runOpts.nodeName,
 		"node-name",
 		"",
 		"Node where the pod is running.",

@@ -3,7 +3,6 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: network-dra-plugin
-  namespace: default
   labels:
     app: network-dra-plugin
 spec:
