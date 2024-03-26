@@ -3,6 +3,7 @@ package dra
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/LionelJouin/network-dra/api/v1alpha1"
 	cdiapi "github.com/container-orchestrated-devices/container-device-interface/pkg/cdi"
@@ -17,10 +18,12 @@ const (
 )
 
 type CDIHandler struct {
-	registry cdiapi.Registry
+	OCIHookPath       string
+	OCIHookSocketPath string
+	Registry          cdiapi.Registry
 }
 
-func NewCDIHandler(cdiRoot string) (*CDIHandler, error) {
+func NewCDIHandler(cdiRoot string, ociHookPath string, ociHookSocketPath string) (*CDIHandler, error) {
 	info, err := os.Stat(cdiRoot)
 	switch {
 	case err != nil && os.IsNotExist(err):
@@ -44,7 +47,9 @@ func NewCDIHandler(cdiRoot string) (*CDIHandler, error) {
 	}
 
 	handler := &CDIHandler{
-		registry: registry,
+		OCIHookPath:       ociHookPath,
+		OCIHookSocketPath: ociHookSocketPath,
+		Registry:          registry,
 	}
 
 	return handler, nil
@@ -64,9 +69,14 @@ func (cdi *CDIHandler) CreateCDISpecFile(claimUID string) error {
 					},
 					Hooks: []*cdispec.Hook{
 						{
-							HookName: "createContainer",
-							// Path:     "/test.sh",
-							// Args:     []string{},
+							HookName: "createRuntime",
+							Path:     cdi.OCIHookPath,
+							Args: []string{
+								filepath.Base(cdi.OCIHookPath),
+								"run",
+								fmt.Sprintf("--claim-uid=%s", claimUID),
+								fmt.Sprintf("--oci-hook-socket-path=%s", cdi.OCIHookSocketPath),
+							},
 						},
 					},
 				},
@@ -80,7 +90,7 @@ func (cdi *CDIHandler) CreateCDISpecFile(claimUID string) error {
 	}
 	spec.Version = minVersion
 
-	return cdi.registry.SpecDB().WriteSpec(spec, specName)
+	return cdi.Registry.SpecDB().WriteSpec(spec, specName)
 }
 
 func (cdi *CDIHandler) GetClaimDevices(claimUID string) ([]string, error) {

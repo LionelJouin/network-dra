@@ -17,6 +17,8 @@ type Driver struct {
 	DriverPluginPath       string
 	PluginRegistrationPath string
 	CDIRoot                string
+	OCIHookPath            string
+	OCIHookSocketPath      string
 
 	cdi *CDIHandler
 }
@@ -27,7 +29,7 @@ func (d *Driver) Start(ctx context.Context) error {
 		return fmt.Errorf("failed to MkdirAll DriverPluginPath %v: %w", d.DriverPluginPath, err)
 	}
 
-	d.cdi, err = NewCDIHandler(d.CDIRoot)
+	d.cdi, err = NewCDIHandler(d.CDIRoot, d.OCIHookPath, d.OCIHookSocketPath)
 	if err != nil {
 		return fmt.Errorf("failed to create cdi handler: %w", err)
 	}

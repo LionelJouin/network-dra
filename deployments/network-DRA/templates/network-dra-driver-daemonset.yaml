@@ -14,6 +14,19 @@ spec:
       labels:
         app: network-dra-plugin
     spec:
+      initContainers:
+      - name: network-dra-plugin-init
+        image: localhost:5000/network-dra/network-dra-plugin:latest
+        imagePullPolicy: Always
+        command:
+        - mv
+        args:
+        - "--force"
+        - "./network-dra-oci-hook"
+        - "/network-dra-plugin-oci-hook/network-dra-oci-hook"
+        volumeMounts:
+        - name: network-dra-plugin-oci-hook
+          mountPath: /network-dra-plugin-oci-hook
       containers:
       - name: network-dra-plugin
         image: localhost:5000/network-dra/network-dra-plugin:latest
@@ -34,6 +47,8 @@ spec:
         securityContext:
           privileged: true
         volumeMounts:
+        - name: network-dra-plugin-oci-hook
+          mountPath: /network-dra-plugin-oci-hook
         - name: plugins-registry
           mountPath: /var/lib/kubelet/plugins_registry
         - name: plugins
@@ -41,6 +56,10 @@ spec:
         - name: cdi
           mountPath: /var/run/cdi
       volumes:
+      - name: network-dra-plugin-oci-hook
+        hostPath:
+          path: /network-dra-plugin-oci-hook
+          type: "DirectoryOrCreate"
       - name: plugins-registry
         hostPath:
           path: /var/lib/kubelet/plugins_registry

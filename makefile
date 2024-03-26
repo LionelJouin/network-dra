@@ -114,7 +114,7 @@ check: lint test ## Run the linter and the Unit tests.
 #############################################################################
 
 .PHONY: generate
-generate: gofmt manifests generate-controller ## Generate all.
+generate: gofmt manifests generate-controller proto ## Generate all.
 
 .PHONY: gofmt
 gofmt: gofumpt ## Run gofumpt.
@@ -131,6 +131,11 @@ generate-controller: controller-gen ## Generate code containing DeepCopy, DeepCo
 .PHONY: generate-helm-chart
 generate-helm-chart: output-dir ## Generate network-DRA helm charts.
 	helm package ./deployments/network-DRA --version $(shell $(MAKE) -s format-version VERSION=$(VERSION)) --destination ./_output/helm
+
+# https://grpc.io/docs/protoc-installation/
+.PHONY: proto
+proto: ## Generate the proto code.
+	protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative pkg/oci/api/v1alpha1/api.proto
 
 #############################################################################
 # Tools

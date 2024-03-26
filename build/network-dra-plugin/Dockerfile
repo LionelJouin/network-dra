@@ -15,9 +15,11 @@ RUN go mod download
 COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-extldflags -static" -o network-dra-plugin ./cmd/network-dra-plugin
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-extldflags -static" -o network-dra-oci-hook ./cmd/network-dra-oci-hook
 
 FROM ${BASE_IMAGE}
 
 COPY --from=build /app/network-dra-plugin .
+COPY --from=build /app/network-dra-oci-hook .
 
 CMD ["./network-dra-plugin", "run"]

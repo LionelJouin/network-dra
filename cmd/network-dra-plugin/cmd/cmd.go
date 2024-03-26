@@ -11,7 +11,7 @@ import (
 // This is called by the main function.
 func Execute() {
 	if err := getRootCmd().Execute(); err != nil {
-		fmt.Println(err)
+		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	}
 }

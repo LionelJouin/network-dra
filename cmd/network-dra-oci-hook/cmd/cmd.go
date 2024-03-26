@@ -18,9 +18,9 @@ func Execute() {
 
 func getRootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
-		Use:   "network-dra-controller",
+		Use:   "network-dra-oci-hook",
 		Short: "CLI",
-		Long:  `CLI for interacting with the network-dra-controller`,
+		Long:  `CLI for interacting with the network-dra-oci-hook`,
 		CompletionOptions: cobra.CompletionOptions{
 			DisableDefaultCmd: true,
 		},

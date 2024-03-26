@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package v1alpha1;
+
+option go_package = "github.com/LionelJouin/network-dra/pkg/oci/api/v1alpha1";
+
+service OCIHook {
+    rpc CreateContainer (CreateContainerRequest) returns (CreateContainerResponse) {}
+}
+
+message CreateContainerRequest {
+    string claim = 1;
+    string ociState = 2;
+}
+
+message CreateContainerResponse {
+}

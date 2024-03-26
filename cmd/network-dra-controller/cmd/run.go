@@ -34,13 +34,13 @@ func newCmdRun() *cobra.Command {
 func (ro *runOptions) run(ctx context.Context) {
 	clientCfg, err := rest.InClusterConfig()
 	if err != nil {
-		fmt.Printf("failed to InClusterConfig: %v", err)
+		fmt.Fprintf(os.Stderr, "failed to InClusterConfig: %v\n", err)
 		os.Exit(1)
 	}
 
 	clientset, err := kubernetes.NewForConfig(clientCfg)
 	if err != nil {
-		fmt.Printf("failed to NewForConfig: %v", err)
+		fmt.Fprintf(os.Stderr, "failed to NewForConfig: %v\n", err)
 		os.Exit(1)
 	}
 
