@@ -61,7 +61,9 @@ func (ro *runOptions) run(ctx context.Context) {
 	conn, err := grpc.Dial(fmt.Sprintf("unix://%s", ro.OCIHookSocketPath),
 		grpc.WithTransportCredentials(
 			insecure.NewCredentials(),
-		))
+		),
+		grpc.WithBlock(),
+	)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error grpc.Dial: %v\n", err)
 		os.Exit(1)

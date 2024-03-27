@@ -38,6 +38,7 @@ spec:
         - "--driver-plugin-path=/var/lib/kubelet/plugins/"
         - "--plugin-registration-path=/var/lib/kubelet/plugins_registry/"
         - "--cdi-root=/var/run/cdi"
+        - "--cri-socket-path=/host/run/containerd/containerd.sock"
         - "--node-name=$(NODE_NAME)"
         env:
         - name: NODE_NAME
@@ -55,6 +56,8 @@ spec:
           mountPath: /var/lib/kubelet/plugins
         - name: cdi
           mountPath: /var/run/cdi
+        - name: cri-socket
+          mountPath: /host/run/containerd/containerd.sock
       volumes:
       - name: network-dra-plugin-oci-hook
         hostPath:
@@ -69,3 +72,7 @@ spec:
       - name: cdi
         hostPath:
           path: /var/run/cdi
+      - name: cri-socket
+        hostPath:
+          path: /run/containerd/containerd.sock
+          type: Socket

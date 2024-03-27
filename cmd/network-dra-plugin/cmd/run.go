@@ -6,12 +6,15 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/LionelJouin/network-dra/api/v1alpha1"
 	"github.com/LionelJouin/network-dra/pkg/dra"
 	ociv1alpha1 "github.com/LionelJouin/network-dra/pkg/oci/api/v1alpha1"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	cri "k8s.io/cri-api/pkg/apis/runtime/v1"
 )
 
 type runOptions struct {
@@ -19,6 +22,7 @@ type runOptions struct {
 	pluginRegistrationPath string
 	cdiRoot                string
 	OCIHookPath            string
+	CRISocketPath          string
 	nodeName               string
 }
 
@@ -63,6 +67,13 @@ func newCmdRun() *cobra.Command {
 	)
 
 	cmd.Flags().StringVar(
+		&runOpts.CRISocketPath,
+		"cri-socket-path",
+		"/run/containerd/containerd.sock",
+		"CRI Socket Path.",
+	)
+
+	cmd.Flags().StringVar(
 		&runOpts.nodeName,
 		"node-name",
 		"",
@@ -98,7 +109,22 @@ func (ro *runOptions) run(ctx context.Context) {
 
 	grpcServer := grpc.NewServer()
 
-	hookCallbackServer := &dra.OCIHookCallbackServer{}
+	ctxTime, cancelFn := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancelFn()
+	conn, err := grpc.DialContext(
+		ctxTime,
+		fmt.Sprintf("unix://%s", ro.CRISocketPath),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithBlock(),
+	)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error connecting to CRI Socket '%s': %v\n", ro.CRISocketPath, err)
+		os.Exit(1)
+	}
+
+	hookCallbackServer := &dra.OCIHookCallbackServer{
+		Client: cri.NewRuntimeServiceClient(conn),
+	}
 
 	go func() {
 		ociv1alpha1.RegisterOCIHookServer(grpcServer, hookCallbackServer)
