@@ -39,6 +39,7 @@ spec:
         - "--plugin-registration-path=/var/lib/kubelet/plugins_registry/"
         - "--cdi-root=/var/run/cdi"
         - "--cri-socket-path=/host/run/containerd/containerd.sock"
+        - "--multus-socket-path=/host/run/multus/multus.sock"
         - "--node-name=$(NODE_NAME)"
         env:
         - name: NODE_NAME
@@ -58,6 +59,8 @@ spec:
           mountPath: /var/run/cdi
         - name: cri-socket
           mountPath: /host/run/containerd/containerd.sock
+        - name: multus-server-socket
+          mountPath: /host/run/multus/multus.sock
       volumes:
       - name: network-dra-plugin-oci-hook
         hostPath:
@@ -75,4 +78,8 @@ spec:
       - name: cri-socket
         hostPath:
           path: /run/containerd/containerd.sock
+          type: Socket
+      - name: multus-server-socket
+        hostPath:
+          path: /run/multus/multus.sock
           type: Socket

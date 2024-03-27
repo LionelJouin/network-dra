@@ -6,8 +6,9 @@ import (
 	"fmt"
 
 	"github.com/LionelJouin/network-dra/pkg/oci/api/v1alpha1"
-	"github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/k8snetworkplumbingwg/multus-dynamic-networks-controller/pkg/multuscni"
 	runtimespec "github.com/opencontainers/runtime-spec/specs-go"
+	multusapi "gopkg.in/k8snetworkplumbingwg/multus-cni.v4/pkg/server/api"
 	cri "k8s.io/cri-api/pkg/apis/runtime/v1"
 	"k8s.io/klog/v2"
 )
@@ -15,7 +16,8 @@ import (
 type OCIHookCallbackServer struct {
 	v1alpha1.UnimplementedOCIHookServer
 
-	Client cri.RuntimeServiceClient
+	CRIClient    cri.RuntimeServiceClient
+	MultusClient multuscni.Client
 }
 
 type PodSandboxStatusInfo struct {
@@ -25,38 +27,100 @@ type PodSandboxStatusInfo struct {
 func (ocihcs *OCIHookCallbackServer) CreateContainer(ctx context.Context, createContainerRequest *v1alpha1.CreateContainerRequest) (*v1alpha1.CreateContainerResponse, error) {
 	klog.FromContext(ctx).Info("CreateContainer", "Claim", createContainerRequest.Claim, "OciState", createContainerRequest.OciState)
 
-	var ociState runtimespec.State
-	err := json.Unmarshal([]byte(createContainerRequest.OciState), &ociState)
+	podSandboxId, podName, podNamespace, podUId, err := getPodInfos(ctx, createContainerRequest.OciState)
 	if err != nil {
-		return nil, fmt.Errorf("failed to json.Unmarshal ociState: %w", err)
+		return nil, err
+	}
+
+	networkNamespace, err := ocihcs.getNetworkNamespace(ctx, podSandboxId)
+	if err != nil {
+		return nil, err
+	}
+
+	cniConfig := `{
+		"name": "mynet",
+		"type": "macvlan",
+		"master": "eth0",
+		"linkInContainer": false
+	}`
+
+	klog.FromContext(ctx).Info("CreateContainer", "network namespace", networkNamespace)
+
+	_, err = ocihcs.MultusClient.InvokeDelegate(multusapi.CreateDelegateRequest(
+		multuscni.CmdAdd,
+		podSandboxId,
+		networkNamespace,
+		"net-1",
+		podNamespace,
+		podName,
+		podUId,
+		[]byte(cniConfig),
+		&multusapi.DelegateInterfaceAttributes{},
+	))
+	if err != nil {
+		klog.FromContext(ctx).Error(nil, "failed to multusClient.InvokeDelegate")
+		return nil, err
+	}
+
+	return &v1alpha1.CreateContainerResponse{}, nil
+}
+
+// returns podSandboxId, pod name, pod namespace, pod uid
+func getPodInfos(ctx context.Context, OciStateStr string) (string, string, string, string, error) {
+	var ociState runtimespec.State
+	err := json.Unmarshal([]byte(OciStateStr), &ociState)
+	if err != nil {
+		return "", "", "", "", fmt.Errorf("failed to json.Unmarshal ociState: %w", err)
 	}
 
 	podSandboxId, exists := ociState.Annotations["io.kubernetes.cri.sandbox-id"]
 	if !exists {
 		klog.FromContext(ctx).Error(nil, "io.kubernetes.cri.sandbox-id doesn't exist in ociState")
-		return nil, fmt.Errorf("io.kubernetes.cri.sandbox-id doesn't exist in ociState")
+		return "", "", "", "", fmt.Errorf("io.kubernetes.cri.sandbox-id doesn't exist in ociState")
 	}
 
-	podSandboxStatus, err := ocihcs.Client.PodSandboxStatus(ctx, &cri.PodSandboxStatusRequest{
+	podName, exists := ociState.Annotations["io.kubernetes.cri.sandbox-name"]
+	if !exists {
+		klog.FromContext(ctx).Error(nil, "io.kubernetes.cri.sandbox-name doesn't exist in ociState")
+		return "", "", "", "", fmt.Errorf("io.kubernetes.cri.sandbox-name doesn't exist in ociState")
+	}
+
+	podNamespace, exists := ociState.Annotations["io.kubernetes.cri.sandbox-namespace"]
+	if !exists {
+		klog.FromContext(ctx).Error(nil, "io.kubernetes.cri.sandbox-namespace doesn't exist in ociState")
+		return "", "", "", "", fmt.Errorf("io.kubernetes.cri.sandbox-namespace doesn't exist in ociState")
+	}
+
+	podUId, exists := ociState.Annotations["io.kubernetes.cri.sandbox-uid"]
+	if !exists {
+		klog.FromContext(ctx).Error(nil, "io.kubernetes.cri.sandbox-uid doesn't exist in ociState")
+		return "", "", "", "", fmt.Errorf("io.kubernetes.cri.sandbox-uid doesn't exist in ociState")
+	}
+
+	return podSandboxId, podName, podNamespace, podUId, nil
+}
+
+func (ocihcs *OCIHookCallbackServer) getNetworkNamespace(ctx context.Context, podSandboxId string) (string, error) {
+	podSandboxStatus, err := ocihcs.CRIClient.PodSandboxStatus(ctx, &cri.PodSandboxStatusRequest{
 		PodSandboxId: podSandboxId,
 		Verbose:      true,
 	})
 	if err != nil || podSandboxStatus == nil {
 		klog.FromContext(ctx).Error(err, "failed to PodSandboxStatus for PodSandboxId", podSandboxId)
-		return nil, fmt.Errorf("failed to PodSandboxStatus for PodSandboxId %s: %w", podSandboxId, err)
+		return "", fmt.Errorf("failed to PodSandboxStatus for PodSandboxId %s: %w", podSandboxId, err)
 	}
 
 	sandboxInfo := &PodSandboxStatusInfo{}
 
 	if err := json.Unmarshal([]byte(podSandboxStatus.Info["info"]), sandboxInfo); err != nil {
 		klog.FromContext(ctx).Error(err, "failed to Unmarshal podSandboxStatus.Info['info']")
-		return nil, fmt.Errorf("failed to Unmarshal podSandboxStatus.Info['info']: %w", err)
+		return "", fmt.Errorf("failed to Unmarshal podSandboxStatus.Info['info']: %w", err)
 	}
 
 	networkNamespace := ""
 
 	for _, namespace := range sandboxInfo.RuntimeSpec.Linux.Namespaces {
-		if namespace.Type != specs.NetworkNamespace {
+		if namespace.Type != runtimespec.NetworkNamespace {
 			continue
 		}
 
@@ -66,10 +130,8 @@ func (ocihcs *OCIHookCallbackServer) CreateContainer(ctx context.Context, create
 
 	if networkNamespace == "" {
 		klog.FromContext(ctx).Error(err, "failed to network namespace for PodSandboxId", podSandboxId)
-		return nil, fmt.Errorf("failed to find network namespace for PodSandboxId %s: %w", podSandboxId, err)
+		return "", fmt.Errorf("failed to find network namespace for PodSandboxId %s: %w", podSandboxId, err)
 	}
 
-	klog.FromContext(ctx).Info("CreateContainer", "network namespace", networkNamespace)
-
-	return &v1alpha1.CreateContainerResponse{}, nil
+	return networkNamespace, nil
 }

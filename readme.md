@@ -9,6 +9,11 @@ kind create cluster --config example/kind.yaml
 ```
 
 ```
+kubectl apply -f https://raw.githubusercontent.com/k8snetworkplumbingwg/multus-cni/master/e2e/templates/cni-install.yml.j2
+kubectl apply -f https://raw.githubusercontent.com/k8snetworkplumbingwg/multus-cni/master/deployments/multus-daemonset-thick.yml
+```
+
+```
 helm install network-dra deployments/network-DRA
 kubectl apply -f examples/pod.yaml
 ```
@@ -20,6 +25,8 @@ kubectl delete -f examples/pod.yaml ; helm delete network-dra
 ## Flow
 
 ![Flow](docs/resources/Diagrams-Call-Flow.png)
+
+The CNI called by this demo is a hardcoded MACVLAN cni config. The CNI call is going through the Multus Thick API which handles the real CNI call.
 
 ## Resources
 

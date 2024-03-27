@@ -11,6 +11,7 @@ import (
 	"github.com/LionelJouin/network-dra/api/v1alpha1"
 	"github.com/LionelJouin/network-dra/pkg/dra"
 	ociv1alpha1 "github.com/LionelJouin/network-dra/pkg/oci/api/v1alpha1"
+	"github.com/k8snetworkplumbingwg/multus-dynamic-networks-controller/pkg/multuscni"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -23,6 +24,7 @@ type runOptions struct {
 	cdiRoot                string
 	OCIHookPath            string
 	CRISocketPath          string
+	MultusSocketPath       string
 	nodeName               string
 }
 
@@ -71,6 +73,13 @@ func newCmdRun() *cobra.Command {
 		"cri-socket-path",
 		"/run/containerd/containerd.sock",
 		"CRI Socket Path.",
+	)
+
+	cmd.Flags().StringVar(
+		&runOpts.MultusSocketPath,
+		"multus-socket-path",
+		"/run/multus/multus.sock",
+		"Multus Socket Path.",
 	)
 
 	cmd.Flags().StringVar(
@@ -123,7 +132,8 @@ func (ro *runOptions) run(ctx context.Context) {
 	}
 
 	hookCallbackServer := &dra.OCIHookCallbackServer{
-		Client: cri.NewRuntimeServiceClient(conn),
+		CRIClient:    cri.NewRuntimeServiceClient(conn),
+		MultusClient: multuscni.NewClient(ro.MultusSocketPath),
 	}
 
 	go func() {
