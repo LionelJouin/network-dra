@@ -26,6 +26,15 @@ kubectl delete -f examples/pod.yaml ; helm delete network-dra
 
 ![Flow](docs/resources/Diagrams-Call-Flow.png)
 
+1. Kubelet calls the DRA Plugin (kubelet plugin) with the claims that must be prepared on that node (The node selection has already happened at that time and is not covered by this demo).
+2. The DRA plugin is writing CDI Device (a file) which contains a Hook on the createRuntime event and that call a program call `Hook-Callback` with the claim-uid and a socket file path as parameter (more parameters could be passed, e.g. CNI Config).
+3. The list of added CDI Devices is returned to kubelet.
+4. Kubectl calls CreateContainer with the list of CDI Devices which are to be used in the containerd.
+5. containerd call the `Hook-Callback` program on the createRuntime event.
+6. `Hook-Callback` receives the OCI State and the parameters (claim uid + socket path) and then call the CreateContainer via the socket passed in parameter (the server runs in the dra-plugin container).
+7. The DRA plugins server finds the PodSandboxID in the OCI State and get the pod status via the CRI API in order to get the network namespace.
+8. The CNI is called with the network namespace and other information retrieved in the pod status.
+
 The CNI called by this demo is a hardcoded MACVLAN cni config. The CNI call is going through the Multus Thick API which handles the real CNI call.
 
 ## Resources
