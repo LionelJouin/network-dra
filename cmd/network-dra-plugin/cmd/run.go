@@ -8,13 +8,17 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/LionelJouin/network-dra/api/v1alpha1"
+	"github.com/LionelJouin/network-dra/api/dra.networking/v1alpha1"
+	dranetworkingclientset "github.com/LionelJouin/network-dra/pkg/client/clientset/versioned"
 	"github.com/LionelJouin/network-dra/pkg/dra"
 	ociv1alpha1 "github.com/LionelJouin/network-dra/pkg/oci/api/v1alpha1"
 	"github.com/k8snetworkplumbingwg/multus-dynamic-networks-controller/pkg/multuscni"
+	netdefclientset "github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	cri "k8s.io/cri-api/pkg/apis/runtime/v1"
 )
 
@@ -96,6 +100,30 @@ func (ro *runOptions) run(ctx context.Context) {
 	draDriverName := v1alpha1.GroupName
 	ociHookSocketPath := filepath.Join(ro.OCIHookPath, "oci-hook-callback.sock")
 
+	clientCfg, err := rest.InClusterConfig()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to InClusterConfig: %v\n", err)
+		os.Exit(1)
+	}
+
+	clientset, err := kubernetes.NewForConfig(clientCfg)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to NewForConfig: %v\n", err)
+		os.Exit(1)
+	}
+
+	netDefClientSet, err := netdefclientset.NewForConfig(clientCfg)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to NewForConfig: %v\n", err)
+		os.Exit(1)
+	}
+
+	draNetworkingClientSet, err := dranetworkingclientset.NewForConfig(clientCfg)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to NewForConfig: %v\n", err)
+		os.Exit(1)
+	}
+
 	driver := dra.Driver{
 		Name:                   v1alpha1.GroupName,
 		DriverPluginPath:       filepath.Join(ro.driverPluginSocketPath, draDriverName),
@@ -103,6 +131,9 @@ func (ro *runOptions) run(ctx context.Context) {
 		CDIRoot:                ro.cdiRoot,
 		OCIHookPath:            filepath.Join(ro.OCIHookPath, "network-dra-oci-hook"),
 		OCIHookSocketPath:      ociHookSocketPath,
+		ClientSet:              clientset,
+		NetDefClientSet:        netDefClientSet,
+		DRANetworkingClientSet: draNetworkingClientSet,
 	}
 
 	if err := os.RemoveAll(ociHookSocketPath); err != nil {
@@ -132,8 +163,10 @@ func (ro *runOptions) run(ctx context.Context) {
 	}
 
 	hookCallbackServer := &dra.OCIHookCallbackServer{
+		Name:         v1alpha1.GroupName,
 		CRIClient:    cri.NewRuntimeServiceClient(conn),
 		MultusClient: multuscni.NewClient(ro.MultusSocketPath),
+		ClientSet:    clientset,
 	}
 
 	go func() {

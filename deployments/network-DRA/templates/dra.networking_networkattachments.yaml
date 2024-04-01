@@ -4,20 +4,20 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.14.0
-  name: networkattachements.dra.networking
+  name: networkattachments.dra.networking
 spec:
   group: dra.networking
   names:
-    kind: NetworkAttachement
-    listKind: NetworkAttachementList
-    plural: networkattachements
-    singular: networkattachement
+    kind: NetworkAttachment
+    listKind: NetworkAttachmentList
+    plural: networkattachments
+    singular: networkattachment
   scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: NetworkAttachement is a specification for a NetworkAttachement
+        description: NetworkAttachment is a specification for a NetworkAttachment
           resource.
         properties:
           apiVersion:
@@ -39,12 +39,41 @@ spec:
             type: object
           spec:
             description: |-
-              Specification of the desired behavior of the NetworkAttachement.
+              Specification of the desired behavior of the NetworkAttachment.
               More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
+            properties:
+              interface:
+                description: |-
+                  InterfaceRequest contains an optional requested name for the
+                  network interface this attachment will create in the container
+                type: string
+              ips:
+                description: |-
+                  IPRequest contains an optional requested IP addresses for this network
+                  attachment
+                items:
+                  type: string
+                type: array
+              mac:
+                description: |-
+                  MacRequest contains an optional requested MAC address for this
+                  network attachment
+                type: string
+              name:
+                description: Name contains the name of the Network object this element
+                  selects
+                type: string
+              namespace:
+                description: |-
+                  Namespace contains the optional namespace that the network referenced
+                  by Name exists in
+                type: string
+            required:
+            - name
             type: object
           status:
             description: |-
-              Most recently observed status of the NetworkAttachement.
+              Most recently observed status of the NetworkAttachment.
               Populated by the system.
               Read-only.
               More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status

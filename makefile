@@ -16,6 +16,10 @@ help: ## Display this help.
 IMAGES ?= base-image network-dra-plugin network-dra-controller
 VERSION ?= latest
 
+GO_MOD := github.com/LionelJouin/network-dra
+API_GROUP_VERSION := dra.networking/v1alpha1
+API_PATH := api
+
 # tests
 E2E_FOCUS ?= ""
 E2E_SKIP ?= ""
@@ -31,6 +35,9 @@ export PATH := $(shell pwd)/bin:$(PATH)
 GOLANGCI_LINT = $(shell pwd)/bin/golangci-lint
 GINKGO = $(shell pwd)/bin/ginkgo
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
+CLIENT_GEN = $(shell pwd)/bin/client-gen
+LISTER_GEN = $(shell pwd)/bin/lister-gen
+INFORMER_GEN = $(shell pwd)/bin/informer-gen
 GOFUMPT = $(shell pwd)/bin/gofumpt
 ENVTEST = $(shell pwd)/bin/setup-envtest
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
@@ -114,7 +121,7 @@ check: lint test ## Run the linter and the Unit tests.
 #############################################################################
 
 .PHONY: generate
-generate: gofmt manifests generate-controller proto ## Generate all.
+generate: gofmt manifests generate-controller proto generate-client generate-lister generate-informer ## Generate all.
 
 .PHONY: gofmt
 gofmt: gofumpt ## Run gofumpt.
@@ -127,6 +134,45 @@ manifests: controller-gen ## Generate CustomResourceDefinition objects.
 .PHONY: generate-controller
 generate-controller: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+
+# https://github.com/haproxytech/kubernetes-ingress/blob/v1.10.10/crs/code-generator.sh#L70
+.PHONY: generate-client
+generate-client: output-dir client-gen ## Generate client code
+	rm -rf $(OUTPUT_DIR)/$(GO_MOD) ; \
+	$(CLIENT_GEN) \
+	--clientset-name "versioned" \
+	--input-base "$(GO_MOD)/$(API_PATH)" \
+	--input "$(API_GROUP_VERSION)" \
+	--input-dirs "./$(API_PATH)/**" \
+	--output-package "$(GO_MOD)/pkg/client/clientset" \
+	--output-base "$(OUTPUT_DIR)" \
+	--go-header-file hack/boilerplate.go.txt ; \
+	rm -rf ./pkg/client/clientset ; \
+	cp -r $(OUTPUT_DIR)/$(GO_MOD)/pkg/client/clientset/ ./pkg/client/clientset/
+
+.PHONY: generate-lister
+generate-lister: output-dir lister-gen ## Generate lister code
+	rm -rf $(OUTPUT_DIR)/$(GO_MOD) ; \
+	$(LISTER_GEN) \
+	--input-dirs "$(GO_MOD)/$(API_PATH)/$(API_GROUP_VERSION)" \
+	--output-package "$(GO_MOD)/pkg/client/listers" \
+	--output-base "$(OUTPUT_DIR)" \
+	--go-header-file hack/boilerplate.go.txt ; \
+	rm -rf ./pkg/client/listers ; \
+	cp -r $(OUTPUT_DIR)/$(GO_MOD)/pkg/client/listers/ ./pkg/client/listers/
+
+.PHONY: generate-informer
+generate-informer: output-dir informer-gen ## Generate informer code
+	rm -rf $(OUTPUT_DIR)/$(GO_MOD) ; \
+	$(INFORMER_GEN) \
+	--input-dirs "$(GO_MOD)/$(API_PATH)/$(API_GROUP_VERSION)" \
+	--versioned-clientset-package "${GO_MOD}/pkg/client/clientset/versioned" \
+	--listers-package "${GO_MOD}/pkg/client/listers" \
+	--output-package "$(GO_MOD)/pkg/client/informers" \
+	--output-base "$(OUTPUT_DIR)" \
+	--go-header-file hack/boilerplate.go.txt ; \
+	rm -rf ./pkg/client/informers ; \
+	cp -r $(OUTPUT_DIR)/$(GO_MOD)/pkg/client/informers/ ./pkg/client/informers/
 
 .PHONY: generate-helm-chart
 generate-helm-chart: output-dir ## Generate network-DRA helm charts.
@@ -158,6 +204,18 @@ ginkgo:
 .PHONY: controller-gen
 controller-gen:
 	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.14.0)
+
+.PHONY: client-gen
+client-gen:
+	$(call go-get-tool,$(CLIENT_GEN),k8s.io/code-generator/cmd/client-gen@v0.29.1)
+
+.PHONY: lister-gen
+lister-gen:
+	$(call go-get-tool,$(LISTER_GEN),k8s.io/code-generator/cmd/lister-gen@v0.29.1)
+
+.PHONY: informer-gen
+informer-gen:
+	$(call go-get-tool,$(INFORMER_GEN),k8s.io/code-generator/cmd/informer-gen@v0.29.1)
 
 .PHONY: gofumpt
 gofumpt:

@@ -1,10 +1,40 @@
 ---
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: macvlan-eth0
+  namespace: default
+spec:
+  config: '{
+        "cniVersion":"0.4.0",
+        "type":"macvlan",
+        "master":"eth0",
+        "mode":"bridge",
+        "ipam": {
+          "type": "static"
+        }
+    }'
+---
+apiVersion: dra.networking/v1alpha1
+kind: NetworkAttachment
+metadata:
+  name: macvlan-eth0-attachment
+spec:
+  name: macvlan-eth0
+  interface: net1
+  ips: 
+  - 10.1.1.11/24
+---
 apiVersion: resource.k8s.io/v1alpha2
 kind: ResourceClaim
 metadata:
-  name: my-net
+  name: macvlan-eth0-attachment
 spec:
   resourceClassName: dra.networking
+  parametersRef:
+    apiGroup: k8s.cni.cncf.io
+    kind: NetworkAttachmentDefinition
+    name: macvlan-eth0-attachment
 ---
 apiVersion: v1
 kind: Pod
@@ -12,17 +42,17 @@ metadata:
   name: ubuntu
 spec:
   containers:
-    - name: ubuntu
-      image: localhost:5000/meridio-io/target-application:latest
-      securityContext:
-        privileged: false
-      command:
-        - sleep
-        - infinity
-      resources:
-        claims:
-        - name: my-net
+  - name: ubuntu
+    image: lioneljouin/example-application:latest # Ubuntu images with more tools
+    securityContext:
+      privileged: false
+    command:
+    - sleep
+    - infinity
+    resources:
+      claims:
+      - name: macvlan-eth0-attachment
   resourceClaims:
-  - name: my-net
+  - name: macvlan-eth0-attachment
     source:
-      resourceClaimName: my-net
+      resourceClaimName: macvlan-eth0-attachment

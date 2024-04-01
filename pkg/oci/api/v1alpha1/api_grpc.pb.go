@@ -22,7 +22,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type OCIHookClient interface {
-	CreateContainer(ctx context.Context, in *CreateContainerRequest, opts ...grpc.CallOption) (*CreateContainerResponse, error)
+	CreateRuntime(ctx context.Context, in *CreateRuntimeRequest, opts ...grpc.CallOption) (*CreateRuntimeResponse, error)
 }
 
 type oCIHookClient struct {
@@ -33,9 +33,9 @@ func NewOCIHookClient(cc grpc.ClientConnInterface) OCIHookClient {
 	return &oCIHookClient{cc}
 }
 
-func (c *oCIHookClient) CreateContainer(ctx context.Context, in *CreateContainerRequest, opts ...grpc.CallOption) (*CreateContainerResponse, error) {
-	out := new(CreateContainerResponse)
-	err := c.cc.Invoke(ctx, "/v1alpha1.OCIHook/CreateContainer", in, out, opts...)
+func (c *oCIHookClient) CreateRuntime(ctx context.Context, in *CreateRuntimeRequest, opts ...grpc.CallOption) (*CreateRuntimeResponse, error) {
+	out := new(CreateRuntimeResponse)
+	err := c.cc.Invoke(ctx, "/v1alpha1.OCIHook/CreateRuntime", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func (c *oCIHookClient) CreateContainer(ctx context.Context, in *CreateContainer
 // All implementations must embed UnimplementedOCIHookServer
 // for forward compatibility
 type OCIHookServer interface {
-	CreateContainer(context.Context, *CreateContainerRequest) (*CreateContainerResponse, error)
+	CreateRuntime(context.Context, *CreateRuntimeRequest) (*CreateRuntimeResponse, error)
 	mustEmbedUnimplementedOCIHookServer()
 }
 
@@ -54,8 +54,8 @@ type OCIHookServer interface {
 type UnimplementedOCIHookServer struct {
 }
 
-func (UnimplementedOCIHookServer) CreateContainer(context.Context, *CreateContainerRequest) (*CreateContainerResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateContainer not implemented")
+func (UnimplementedOCIHookServer) CreateRuntime(context.Context, *CreateRuntimeRequest) (*CreateRuntimeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateRuntime not implemented")
 }
 func (UnimplementedOCIHookServer) mustEmbedUnimplementedOCIHookServer() {}
 
@@ -70,20 +70,20 @@ func RegisterOCIHookServer(s grpc.ServiceRegistrar, srv OCIHookServer) {
 	s.RegisterService(&OCIHook_ServiceDesc, srv)
 }
 
-func _OCIHook_CreateContainer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateContainerRequest)
+func _OCIHook_CreateRuntime_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateRuntimeRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(OCIHookServer).CreateContainer(ctx, in)
+		return srv.(OCIHookServer).CreateRuntime(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/v1alpha1.OCIHook/CreateContainer",
+		FullMethod: "/v1alpha1.OCIHook/CreateRuntime",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(OCIHookServer).CreateContainer(ctx, req.(*CreateContainerRequest))
+		return srv.(OCIHookServer).CreateRuntime(ctx, req.(*CreateRuntimeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -96,8 +96,8 @@ var OCIHook_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*OCIHookServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "CreateContainer",
-			Handler:    _OCIHook_CreateContainer_Handler,
+			MethodName: "CreateRuntime",
+			Handler:    _OCIHook_CreateRuntime_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

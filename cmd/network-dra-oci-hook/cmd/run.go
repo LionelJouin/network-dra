@@ -14,6 +14,9 @@ import (
 
 type runOptions struct {
 	claimUID          string
+	claimName         string
+	claimNamespace    string
+	claimSpec         string
 	OCIHookSocketPath string
 }
 
@@ -34,6 +37,27 @@ func newCmdRun() *cobra.Command {
 		"claim-uid",
 		"",
 		"Claim UID.",
+	)
+
+	cmd.Flags().StringVar(
+		&runOpts.claimName,
+		"claim-name",
+		"",
+		"Claim Name.",
+	)
+
+	cmd.Flags().StringVar(
+		&runOpts.claimNamespace,
+		"claim-namespace",
+		"",
+		"Claim namespace.",
+	)
+
+	cmd.Flags().StringVar(
+		&runOpts.claimSpec,
+		"claim-spec",
+		"",
+		"Claim Spec.",
 	)
 
 	cmd.Flags().StringVar(
@@ -71,12 +95,15 @@ func (ro *runOptions) run(ctx context.Context) {
 
 	client := ociv1alpha1.NewOCIHookClient(conn)
 
-	_, err = client.CreateContainer(ctx, &ociv1alpha1.CreateContainerRequest{
-		Claim:    ro.claimUID,
-		OciState: string(ociState),
+	_, err = client.CreateRuntime(ctx, &ociv1alpha1.CreateRuntimeRequest{
+		OciState:       string(ociState),
+		ClaimUID:       ro.claimUID,
+		ClaimName:      ro.claimName,
+		ClaimNamespace: ro.claimNamespace,
+		ClaimSpec:      ro.claimSpec,
 	})
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error CreateContainer: %v\n", err)
+		fmt.Fprintf(os.Stderr, "error CreateRuntime: %v\n", err)
 		os.Exit(1)
 	}
 }

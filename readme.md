@@ -5,7 +5,7 @@ Example of a DRA driver for call CNI on container creation.
 ## Demo
 
 ```
-kind create cluster --config example/kind.yaml
+kind create cluster --config examples/kind.yaml
 ```
 
 ```

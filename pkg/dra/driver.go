@@ -6,6 +6,13 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/LionelJouin/network-dra/api/dra.networking/v1alpha1"
+	dranetworkingclientset "github.com/LionelJouin/network-dra/pkg/client/clientset/versioned"
+	netdefv1 "github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/apis/k8s.cni.cncf.io/v1"
+	netdefclientset "github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/client/clientset/versioned"
+	resourcev1alpha2 "k8s.io/api/resource/v1alpha2"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/util/retry"
 	plugin "k8s.io/dynamic-resource-allocation/kubeletplugin"
 	"k8s.io/klog/v2"
@@ -20,11 +27,15 @@ type Driver struct {
 	OCIHookPath            string
 	OCIHookSocketPath      string
 
+	ClientSet              clientset.Interface
+	NetDefClientSet        netdefclientset.Interface
+	DRANetworkingClientSet dranetworkingclientset.Interface
+
 	cdi *CDIHandler
 }
 
 func (d *Driver) Start(ctx context.Context) error {
-	err := os.MkdirAll(d.DriverPluginPath, 0750)
+	err := os.MkdirAll(d.DriverPluginPath, 0o750)
 	if err != nil {
 		return fmt.Errorf("failed to MkdirAll DriverPluginPath %v: %w", d.DriverPluginPath, err)
 	}
@@ -87,7 +98,12 @@ func (d *Driver) nodePrepareResource(ctx context.Context, claim *drapbv1.Claim) 
 	var err error
 	var prepared []string
 	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		err = d.cdi.CreateCDISpecFile(claim.Uid)
+		claimSpec, err := d.getClaimParams(ctx, claim)
+		if err != nil {
+			return fmt.Errorf("error getting spec (NetworkAttachmentSpec + NetworkAttachmentDefinitionSpec) for claim %v: %v", claim.Uid, err)
+		}
+
+		err = d.cdi.CreateCDISpecFile(claim, claimSpec)
 		if err != nil {
 			return fmt.Errorf("error CreateCDISpecFile for claim %v: %v", claim.Uid, err)
 		}
@@ -96,24 +112,6 @@ func (d *Driver) nodePrepareResource(ctx context.Context, claim *drapbv1.Claim) 
 		if err != nil {
 			return fmt.Errorf("error GetClaimDevices for claim %v: %v", claim.Uid, err)
 		}
-
-		// prepared, err = d.prepare(ctx, claim.Uid)
-		// if err != nil {
-		// 	return fmt.Errorf("error allocating devices for claim '%v': %v", claim.Uid, err)
-		// }
-
-		// updatedSpec, err := d.state.GetUpdatedSpec(&d.nascrd.Spec)
-		// if err != nil {
-		// 	return fmt.Errorf("error getting updated CR spec: %v", err)
-		// }
-
-		// err = d.nasclient.Update(ctx, updatedSpec)
-		// if err != nil {
-		// 	if err := d.state.Unprepare(claim.Uid); err != nil {
-		// 		klog.FromContext(ctx).Error(err, "Failed to unprepare after Update", "claim", claim.Uid)
-		// 	}
-		// 	return err
-		// }
 
 		return nil
 	})
@@ -130,21 +128,6 @@ func (d *Driver) nodePrepareResource(ctx context.Context, claim *drapbv1.Claim) 
 
 func (d *Driver) nodeUnprepareResource(ctx context.Context, claim *drapbv1.Claim) *drapbv1.NodeUnprepareResourceResponse {
 	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		// err := d.unprepare(ctx, claim.Uid)
-		// if err != nil {
-		// 	return fmt.Errorf("error unpreparing devices for claim '%v': %v", claim.Uid, err)
-		// }
-
-		// updatedSpec, err := d.state.GetUpdatedSpec(&d.nascrd.Spec)
-		// if err != nil {
-		// 	return fmt.Errorf("error getting updated CR spec: %v", err)
-		// }
-
-		// err = d.nasclient.Update(ctx, updatedSpec)
-		// if err != nil {
-		// 	return err
-		// }
-
 		return nil
 	})
 	if err != nil {
@@ -155,4 +138,57 @@ func (d *Driver) nodeUnprepareResource(ctx context.Context, claim *drapbv1.Claim
 
 	klog.FromContext(ctx).Info("Unprepared devices", "claim", claim.Uid, "Name", claim.Name)
 	return &drapbv1.NodeUnprepareResourceResponse{}
+}
+
+func (d *Driver) getClaimParams(ctx context.Context, claim *drapbv1.Claim) (*ClaimParams, error) {
+	resourceClaim, err := d.getClaim(ctx, claim)
+	if err != nil {
+		return nil, err
+	}
+
+	networkAttachment, err := d.getNetworkAttachment(ctx, resourceClaim)
+	if err != nil {
+		return nil, err
+	}
+
+	networkAttachmentDefinition, err := d.getNetworkAttachmentDefinition(ctx, networkAttachment)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ClaimParams{
+		NetworkAttachmentSpec:           &networkAttachment.Spec,
+		NetworkAttachmentDefinitionSpec: &networkAttachmentDefinition.Spec,
+	}, nil
+}
+
+func (d *Driver) getClaim(ctx context.Context, claim *drapbv1.Claim) (*resourcev1alpha2.ResourceClaim, error) {
+	resourceClaim, err := d.ClientSet.ResourceV1alpha2().ResourceClaims(claim.Namespace).Get(ctx, claim.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("error getting ResourceClaim '%v' in namespace '%v': %v", claim.Name, claim.Namespace, err)
+	}
+
+	return resourceClaim, nil
+}
+
+func (d *Driver) getNetworkAttachment(ctx context.Context, resourceClaim *resourcev1alpha2.ResourceClaim) (*v1alpha1.NetworkAttachment, error) {
+	if resourceClaim.Spec.ParametersRef == nil {
+		return nil, fmt.Errorf("ParametersRef cannot be nil in ResourceClaim %v in namespace %v", resourceClaim.Name, resourceClaim.Namespace)
+	}
+
+	networkAttachment, err := d.DRANetworkingClientSet.DraV1alpha1().NetworkAttachments(resourceClaim.Namespace).Get(ctx, resourceClaim.Spec.ParametersRef.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("error getting NetworkAttachment '%v' in namespace '%v': %v", resourceClaim.Spec.ParametersRef.Name, resourceClaim.Namespace, err)
+	}
+
+	return networkAttachment, nil
+}
+
+func (d *Driver) getNetworkAttachmentDefinition(ctx context.Context, networkAttachment *v1alpha1.NetworkAttachment) (*netdefv1.NetworkAttachmentDefinition, error) {
+	networkAttachmentDefinition, err := d.NetDefClientSet.K8sCniCncfIoV1().NetworkAttachmentDefinitions(networkAttachment.Namespace).Get(ctx, networkAttachment.Spec.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("error getting NetworkAttachmentDefinition '%v' in namespace '%v': %v", networkAttachment.Spec.Name, networkAttachment.Namespace, err)
+	}
+
+	return networkAttachmentDefinition, nil
 }

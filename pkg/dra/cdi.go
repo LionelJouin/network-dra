@@ -5,15 +5,16 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/LionelJouin/network-dra/api/v1alpha1"
+	"github.com/LionelJouin/network-dra/api/dra.networking/v1alpha1"
 	cdiapi "github.com/container-orchestrated-devices/container-device-interface/pkg/cdi"
 	cdispec "github.com/container-orchestrated-devices/container-device-interface/specs-go"
+	drapbv1 "k8s.io/kubelet/pkg/apis/dra/v1alpha3"
 	"tags.cncf.io/container-device-interface/pkg/parser"
 )
 
 const (
 	cdiVendor = "k8s." + v1alpha1.GroupName
-	cdiClass  = "attachement"
+	cdiClass  = "attachment"
 	cdiKind   = cdiVendor + "/" + cdiClass
 )
 
@@ -27,7 +28,7 @@ func NewCDIHandler(cdiRoot string, ociHookPath string, ociHookSocketPath string)
 	info, err := os.Stat(cdiRoot)
 	switch {
 	case err != nil && os.IsNotExist(err):
-		err := os.MkdirAll(cdiRoot, 0750)
+		err := os.MkdirAll(cdiRoot, 0o750)
 		if err != nil {
 			return nil, fmt.Errorf("failed to MkdirAll CDIRoot %v: %w", cdiRoot, err)
 		}
@@ -55,14 +56,19 @@ func NewCDIHandler(cdiRoot string, ociHookPath string, ociHookSocketPath string)
 	return handler, nil
 }
 
-func (cdi *CDIHandler) CreateCDISpecFile(claimUID string) error {
-	specName := cdiapi.GenerateTransientSpecName(cdiVendor, cdiClass, claimUID)
+func (cdi *CDIHandler) CreateCDISpecFile(claim *drapbv1.Claim, claimSpec *ClaimParams) error {
+	specName := cdiapi.GenerateTransientSpecName(cdiVendor, cdiClass, claim.Uid)
+
+	claimSpecStr, err := claimSpec.encode()
+	if err != nil {
+		return err
+	}
 
 	spec := &cdispec.Spec{
 		Kind: cdiKind,
 		Devices: []cdispec.Device{
 			{
-				Name: claimUID,
+				Name: claim.Uid,
 				ContainerEdits: cdispec.ContainerEdits{
 					Env: []string{
 						fmt.Sprintf("NETWORK_DEVICE=%s", "test-abc"),
@@ -74,8 +80,11 @@ func (cdi *CDIHandler) CreateCDISpecFile(claimUID string) error {
 							Args: []string{
 								filepath.Base(cdi.OCIHookPath),
 								"run",
-								fmt.Sprintf("--claim-uid=%s", claimUID),
+								fmt.Sprintf("--claim-uid=%s", claim.Uid),
+								fmt.Sprintf("--claim-name=%s", claim.Name),
+								fmt.Sprintf("--claim-namespace=%s", claim.Namespace),
 								fmt.Sprintf("--oci-hook-socket-path=%s", cdi.OCIHookSocketPath),
+								fmt.Sprintf("--claim-spec=%s", claimSpecStr),
 							},
 						},
 					},

@@ -5,13 +5,16 @@ package v1alpha1;
 option go_package = "github.com/LionelJouin/network-dra/pkg/oci/api/v1alpha1";
 
 service OCIHook {
-    rpc CreateContainer (CreateContainerRequest) returns (CreateContainerResponse) {}
+    rpc CreateRuntime (CreateRuntimeRequest) returns (CreateRuntimeResponse) {}
 }
 
-message CreateContainerRequest {
-    string claim = 1;
-    string ociState = 2;
+message CreateRuntimeRequest {
+    string ociState = 1;
+    string claimUID = 2;
+    string claimName = 3;
+    string claimNamespace = 4;
+    string claimSpec = 5;
 }
 
-message CreateContainerResponse {
+message CreateRuntimeResponse {
 }

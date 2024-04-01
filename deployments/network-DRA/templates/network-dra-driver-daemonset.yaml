@@ -14,6 +14,7 @@ spec:
       labels:
         app: network-dra-plugin
     spec:
+      serviceAccountName: network-dra-service-account
       initContainers:
       - name: network-dra-plugin-init
         image: localhost:5000/network-dra/network-dra-plugin:latest

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/LionelJouin/network-dra/api/v1alpha1"
+	"github.com/LionelJouin/network-dra/api/dra.networking/v1alpha1"
 	"github.com/LionelJouin/network-dra/pkg/controllers"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/informers"

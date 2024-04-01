@@ -8,8 +8,7 @@ import (
 	"k8s.io/dynamic-resource-allocation/controller"
 )
 
-type DriverController struct {
-}
+type DriverController struct{}
 
 func (dc DriverController) GetClassParameters(ctx context.Context, class *resourcev1alpha2.ResourceClass) (interface{}, error) {
 	return nil, nil
