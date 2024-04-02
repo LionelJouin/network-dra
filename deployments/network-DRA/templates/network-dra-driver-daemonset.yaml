@@ -17,8 +17,8 @@ spec:
       serviceAccountName: network-dra-service-account
       initContainers:
       - name: network-dra-plugin-init
-        image: localhost:5000/network-dra/network-dra-plugin:latest
-        imagePullPolicy: Always
+        image: {{ .Values.registry }}/network-dra-plugin:latest
+        imagePullPolicy: IfNotPresent
         command:
         - mv
         args:
@@ -30,8 +30,8 @@ spec:
           mountPath: /network-dra-plugin-oci-hook
       containers:
       - name: network-dra-plugin
-        image: localhost:5000/network-dra/network-dra-plugin:latest
-        imagePullPolicy: Always
+        image: {{ .Values.registry }}/network-dra-plugin:latest
+        imagePullPolicy: IfNotPresent
         command:
         - ./network-dra-plugin
         args:

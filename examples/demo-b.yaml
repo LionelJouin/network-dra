@@ -1,0 +1,19 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo-b
+spec:
+  containers:
+  - name: alpine
+    image: alpine
+    command:
+    - sleep
+    - infinity
+    resources:
+      claims:
+      - name: macvlan-eth0-attachment
+  resourceClaims:
+  - name: macvlan-eth0-attachment
+    source:
+      resourceClaimName: macvlan-eth0-attachment

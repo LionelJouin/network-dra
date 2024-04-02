@@ -17,8 +17,8 @@ spec:
       serviceAccountName: network-dra-service-account
       containers:
       - name: network-dra-controller
-        image: localhost:5000/network-dra/network-dra-controller:latest
-        imagePullPolicy: Always
+        image: {{ .Values.registry }}/network-dra-controller:latest
+        imagePullPolicy: IfNotPresent
         command:
         - ./network-dra-controller
         args:

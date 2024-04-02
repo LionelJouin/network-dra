@@ -6,6 +6,9 @@ networking:
   kubeProxyMode: ipvs
 featureGates:
   "DynamicResourceAllocation": true
+runtimeConfig:
+  "networking.k8s.io/v1alpha1": true
+  "resource.k8s.io/v1alpha2": true
 containerdConfigPatches:
 - |-
   [plugins."io.containerd.grpc.v1.cri"]
@@ -13,28 +16,5 @@ containerdConfigPatches:
 nodes:
 - role: control-plane
   image: kindest/node:v1.29.0@sha256:eaa1450915475849a73a9227b8f201df25e55e268e5d619312131292e324d570
-  kubeadmConfigPatches:
-  - |
-    kind: ClusterConfiguration
-    apiServer:
-        extraArgs:
-          runtime-config: "resource.k8s.io/v1alpha2=true"
-    scheduler:
-        extraArgs:
-          v: "1"
-    controllerManager:
-        extraArgs:
-          v: "1"
-  - |
-    kind: InitConfiguration
-    nodeRegistration:
-      kubeletExtraArgs:
-        v: "1"
 - role: worker
   image: kindest/node:v1.29.0@sha256:eaa1450915475849a73a9227b8f201df25e55e268e5d619312131292e324d570
-  kubeadmConfigPatches:
-  - |
-    kind: JoinConfiguration
-    nodeRegistration:
-      kubeletExtraArgs:
-        v: "1"
