@@ -6,7 +6,8 @@ metadata:
 spec:
   containers:
   - name: alpine
-    image: alpine
+    image: alpine:latest
+    imagePullPolicy: IfNotPresent
     command:
     - sleep
     - infinity

@@ -37,8 +37,8 @@ metadata:
 spec:
   resourceClassName: dra.networking
   parametersRef:
-    apiGroup: k8s.cni.cncf.io
-    kind: NetworkAttachmentDefinition
+    apiGroup: dra.networking/v1alpha1
+    kind: NetworkAttachment
     name: macvlan-eth0-attachment
 ---
 apiVersion: v1
@@ -48,7 +48,8 @@ metadata:
 spec:
   containers:
   - name: alpine
-    image: alpine
+    image: alpine:latest
+    imagePullPolicy: IfNotPresent
     command:
     - sleep
     - infinity
