@@ -42,6 +42,8 @@ spec:
               Specification of the desired behavior of the NetworkAttachment.
               More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
             properties:
+              default:
+                type: boolean
               interface:
                 description: |-
                   InterfaceRequest contains an optional requested name for the

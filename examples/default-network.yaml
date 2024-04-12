@@ -1,0 +1,56 @@
+---
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: default-network
+spec:
+  config: '{
+        "cniVersion": "0.3.1",
+        "name": "kindnet",
+        "plugins": [
+        {
+                "type": "ptp",
+                "ipMasq": false,
+                "ipam": {
+                        "type": "host-local",
+                        "dataDir": "/run/cni-ipam-state",
+                        "routes": [
+                                { "dst": "0.0.0.0/0" },
+                                { "dst": "::/0" }
+                        ],
+                        "ranges": [
+                                [ { "subnet": "10.244.1.0/24" } ],
+                                [ { "subnet": "fd00:10:244:1::/64" } ]
+                        ]
+                },
+                "mtu": 1500
+        },
+        {
+                "type": "portmap",
+                "capabilities": {
+                        "portMappings": true
+                }
+        }
+        ]
+      }'
+---
+apiVersion: dra.networking/v1alpha1
+kind: NetworkAttachment
+metadata:
+  name: default-network
+spec:
+  name: default-network
+  interface: eth0
+  default: true
+---
+apiVersion: resource.k8s.io/v1alpha2
+kind: ResourceClaimTemplate
+metadata:
+  name: default-network
+spec:
+  spec:
+    resourceClassName: dra.networking
+    parametersRef:
+      apiGroup: dra.networking/v1alpha1
+      kind: NetworkAttachment
+      name: default-network

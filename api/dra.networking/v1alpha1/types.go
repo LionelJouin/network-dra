@@ -45,6 +45,7 @@ type NetworkAttachmentSpec struct {
 	// InterfaceRequest contains an optional requested name for the
 	// network interface this attachment will create in the container
 	InterfaceRequest string `json:"interface,omitempty"`
+	Default          bool   `json:"default,omitempty"`
 }
 
 // NetworkAttachmentStatus is the status for a NetworkAttachment resource.

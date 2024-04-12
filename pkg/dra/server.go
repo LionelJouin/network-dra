@@ -10,6 +10,7 @@ import (
 	nadutils "github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/utils"
 	runtimespec "github.com/opencontainers/runtime-spec/specs-go"
 	multusapi "gopkg.in/k8snetworkplumbingwg/multus-cni.v4/pkg/server/api"
+	corev1 "k8s.io/api/core/v1"
 	v1alpha2resource "k8s.io/api/resource/v1alpha2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientset "k8s.io/client-go/kubernetes"
@@ -63,7 +64,7 @@ func (ocihcs *OCIHookCallbackServer) CreateRuntime(ctx context.Context, createRu
 
 	klog.FromContext(ctx).Info("CreateRuntime", "network namespace", networkNamespace)
 
-	_, err = ocihcs.MultusClient.InvokeDelegate(multusapi.CreateDelegateRequest(
+	response, err := ocihcs.MultusClient.InvokeDelegate(multusapi.CreateDelegateRequest(
 		multuscni.CmdAdd,
 		podSandboxId,
 		networkNamespace,
@@ -88,6 +89,14 @@ func (ocihcs *OCIHookCallbackServer) CreateRuntime(ctx context.Context, createRu
 	// 	klog.FromContext(ctx).Error(err, "failed to updateStatus")
 	// 	return nil, err
 	// }
+
+	if claimSpec.NetworkAttachmentSpec.Default {
+		err = ocihcs.setDefaultPodNetworkStatus(ctx, podName, podNamespace, response)
+		if err != nil {
+			klog.FromContext(ctx).Error(err, "failed to setDefaultPodNetworkStatus")
+			return nil, err
+		}
+	}
 
 	return &v1alpha1.CreateRuntimeResponse{}, nil
 }
@@ -194,6 +203,30 @@ func (ocihcs *OCIHookCallbackServer) updateStatus(ctx context.Context, createRun
 	_, err = ocihcs.ClientSet.ResourceV1alpha2().ResourceClaims(createRuntimeRequest.ClaimNamespace).UpdateStatus(ctx, resourceClaim, metav1.UpdateOptions{})
 	if err != nil {
 		return fmt.Errorf("error updating status of ResourceClaim '%v' in namespace '%v': %v", createRuntimeRequest.ClaimName, createRuntimeRequest.ClaimNamespace, err)
+	}
+
+	return nil
+}
+
+func (ocihcs *OCIHookCallbackServer) setDefaultPodNetworkStatus(ctx context.Context, podName string, podNamespace string, response *multusapi.Response) error {
+	pod, err := ocihcs.ClientSet.CoreV1().Pods(podNamespace).Get(ctx, podName, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to get pod (%s): %v", podName, err)
+	}
+
+	pod.Status.PodIPs = []corev1.PodIP{}
+	for _, ip := range response.Result.IPs {
+		pod.Status.PodIPs = append(pod.Status.PodIPs, corev1.PodIP{
+			IP: ip.Address.IP.String(),
+		})
+		if pod.Status.PodIP == "" {
+			pod.Status.PodIP = ip.Address.IP.String()
+		}
+	}
+
+	_, err = ocihcs.ClientSet.CoreV1().Pods(podNamespace).UpdateStatus(ctx, pod, metav1.UpdateOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to update pod (%s): %v", podName, err)
 	}
 
 	return nil

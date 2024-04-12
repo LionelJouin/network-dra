@@ -1,0 +1,30 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo-default-network
+  labels:
+    app: demo-default-network
+spec:
+  containers:
+  - name: alpine
+    image: alpine:latest
+    imagePullPolicy: IfNotPresent
+    command:
+      - /bin/sh
+      - -c
+    args:
+      - nc -lk -p 5000 -e sleep infinity
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-default-network-service
+spec:
+  selector:
+    app: demo-default-network
+  type: ClusterIP
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: 5000

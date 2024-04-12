@@ -15,6 +15,7 @@ spec:
         app: network-dra-controller
     spec:
       serviceAccountName: network-dra-service-account
+      hostNetwork: true
       containers:
       - name: network-dra-controller
         image: {{ .Values.registry }}/network-dra-controller:latest

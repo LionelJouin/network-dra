@@ -14,7 +14,13 @@ spec:
       labels:
         app: network-dra-plugin
     spec:
+      tolerations:
+      - operator: Exists
+        effect: NoSchedule
+      - operator: Exists
+        effect: NoExecute
       serviceAccountName: network-dra-service-account
+      hostNetwork: true
       initContainers:
       - name: network-dra-plugin-init
         image: {{ .Values.registry }}/network-dra-plugin:latest
