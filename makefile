@@ -39,6 +39,8 @@ CLIENT_GEN = $(shell pwd)/bin/client-gen
 LISTER_GEN = $(shell pwd)/bin/lister-gen
 INFORMER_GEN = $(shell pwd)/bin/informer-gen
 GOFUMPT = $(shell pwd)/bin/gofumpt
+PROTOC_GEN_GO = $(shell pwd)/bin/protoc-gen-go
+PROTOC_GEN_GO_GRPC = $(shell pwd)/bin/protoc-gen-go-grpc
 ENVTEST = $(shell pwd)/bin/setup-envtest
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
 
@@ -180,7 +182,7 @@ generate-helm-chart: output-dir ## Generate network-DRA helm charts.
 
 # https://grpc.io/docs/protoc-installation/
 .PHONY: proto
-proto: ## Generate the proto code.
+proto: protoc-gen-go protoc-gen-go-grpc ## Generate the proto code.
 	protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative pkg/oci/api/v1alpha1/api.proto
 
 #############################################################################
@@ -220,6 +222,14 @@ informer-gen:
 .PHONY: gofumpt
 gofumpt:
 	$(call go-get-tool,$(GOFUMPT),mvdan.cc/gofumpt@v0.5.0)
+
+.PHONY: protoc-gen-go
+protoc-gen-go:
+	$(call go-get-tool,$(PROTOC_GEN_GO),google.golang.org/protobuf/cmd/protoc-gen-go@v1.34.1)
+
+.PHONY: protoc-gen-go-grpc
+protoc-gen-go-grpc:
+	$(call go-get-tool,$(PROTOC_GEN_GO_GRPC),google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.4.0)
 
 .PHONY: envtest
 envtest:

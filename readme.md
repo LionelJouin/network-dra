@@ -18,9 +18,9 @@ Build Kind base image
 make -C images/base quick EXTRA_BUILD_OPT="--build-arg CONTAINERD_CLONE_URL=https://github.com/LionelJouin/containerd --build-arg CONTAINERD_VERSION=cni-disabled" TAG=cni-disabled
 ```
 
-Clone Kubernetes
+Clone the Kubernetes fork (to disable default CNI + add default claim network)
 ```
-git clone https://github.com/kubernetes/kubernetes
+git clone git@github.com:LionelJouin/kubernetes.git --branch default-pod-network-dra
 ```
 
 Build Kind image
