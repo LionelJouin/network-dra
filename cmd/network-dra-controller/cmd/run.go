@@ -6,7 +6,9 @@ import (
 	"os"
 
 	"github.com/LionelJouin/network-dra/api/dra.networking/v1alpha1"
+	dranetworkingclientset "github.com/LionelJouin/network-dra/pkg/client/clientset/versioned"
 	"github.com/LionelJouin/network-dra/pkg/controllers"
+	netdefclientset "github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
@@ -44,7 +46,22 @@ func (ro *runOptions) run(ctx context.Context) {
 		os.Exit(1)
 	}
 
-	driverController := controllers.DriverController{}
+	netDefClientSet, err := netdefclientset.NewForConfig(clientCfg)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to NewForConfig: %v\n", err)
+		os.Exit(1)
+	}
+
+	draNetworkingClientSet, err := dranetworkingclientset.NewForConfig(clientCfg)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to NewForConfig: %v\n", err)
+		os.Exit(1)
+	}
+
+	driverController := controllers.DriverController{
+		NetDefClientSet:        netDefClientSet,
+		DRANetworkingClientSet: draNetworkingClientSet,
+	}
 
 	informerFactory := informers.NewSharedInformerFactory(clientset, 0)
 	ctrl := controller.New(ctx, v1alpha1.GroupName, driverController, clientset, informerFactory)

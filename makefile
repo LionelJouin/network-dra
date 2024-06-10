@@ -13,7 +13,7 @@ help: ## Display this help.
 # Variables
 ############################################################################
 
-IMAGES ?= base-image network-dra-plugin network-dra-controller
+IMAGES ?= base-image network-dra-controller network-nri-plugin
 VERSION ?= latest
 
 GO_MOD := github.com/LionelJouin/network-dra
@@ -79,13 +79,13 @@ push:
 base-image: ## Build the base-image.
 	IMAGE=base-image $(MAKE) -s $(BUILD_STEPS)
 
-.PHONY: network-dra-plugin
-network-dra-plugin: ## Build the network-dra-plugin.
-	IMAGE=network-dra-plugin $(MAKE) -s $(BUILD_STEPS)
-
 .PHONY: network-dra-controller
 network-dra-controller: ## Build the network-dra-controller.
 	IMAGE=network-dra-controller $(MAKE) -s $(BUILD_STEPS)
+
+.PHONY: network-nri-plugin
+network-nri-plugin: ## Build the network-nri-plugin.
+	IMAGE=network-nri-plugin $(MAKE) -s $(BUILD_STEPS)
 
 #############################################################################
 ##@ Testing & Code check
@@ -123,7 +123,7 @@ check: lint test ## Run the linter and the Unit tests.
 #############################################################################
 
 .PHONY: generate
-generate: gofmt manifests generate-controller proto generate-client generate-lister generate-informer ## Generate all.
+generate: gofmt manifests generate-controller generate-client generate-lister generate-informer ## Generate all.
 
 .PHONY: gofmt
 gofmt: gofumpt ## Run gofumpt.
@@ -179,11 +179,6 @@ generate-informer: output-dir informer-gen ## Generate informer code
 .PHONY: generate-helm-chart
 generate-helm-chart: output-dir ## Generate network-DRA helm charts.
 	helm package ./deployments/network-DRA --version $(shell $(MAKE) -s format-version VERSION=$(VERSION)) --destination ./_output/helm
-
-# https://grpc.io/docs/protoc-installation/
-.PHONY: proto
-proto: protoc-gen-go protoc-gen-go-grpc ## Generate the proto code.
-	protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative pkg/oci/api/v1alpha1/api.proto
 
 #############################################################################
 # Tools

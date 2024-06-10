@@ -1,0 +1,75 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: network-nri-plugin
+  labels:
+    app: network-nri-plugin
+spec:
+  selector:
+    matchLabels:
+      app: network-nri-plugin
+  template:
+    metadata:
+      labels:
+        app: network-nri-plugin
+    spec:
+      tolerations:
+      - operator: Exists
+        effect: NoSchedule
+      - operator: Exists
+        effect: NoExecute
+      serviceAccountName: network-dra-service-account
+      hostNetwork: true
+      hostPID: true
+      containers:
+      - name: network-nri-plugin
+        image: {{ .Values.registry }}/network-nri-plugin:latest
+        imagePullPolicy: Always
+        command:
+        - ./network-nri-plugin
+        args:
+        - "run"
+        - "--plugin-index=53"
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: cri-socket
+          mountPath: /var/run/nri/nri.sock
+        - name: cni
+          mountPath: /host/etc/cni/net.d
+        - name: cnibin
+          mountPath: /opt/cni/bin
+        - name: hostroot
+          mountPath: /hostroot
+          mountPropagation: HostToContainer
+        - name: host-run-netns
+          mountPath: /run/netns
+          mountPropagation: HostToContainer
+        - name: host-var-lib-cni-nri-network
+          mountPath: /var/lib/cni/nri-network
+      volumes:
+      - name: cri-socket
+        hostPath:
+          path: /var/run/nri/nri.sock
+          type: Socket
+      - name: cni
+        hostPath:
+          path: /etc/cni/net.d
+      - name: cnibin
+        hostPath:
+          path: /opt/cni/bin
+      - name: hostroot
+        hostPath:
+          path: /
+      - name: host-run-netns
+        hostPath:
+          path: /run/netns/
+      - name: host-var-lib-cni-nri-network
+        hostPath:
+          path: /var/lib/cni/nri-network

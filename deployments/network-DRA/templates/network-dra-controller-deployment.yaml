@@ -19,7 +19,7 @@ spec:
       containers:
       - name: network-dra-controller
         image: {{ .Values.registry }}/network-dra-controller:latest
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         command:
         - ./network-dra-controller
         args:

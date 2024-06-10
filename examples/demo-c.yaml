@@ -35,9 +35,6 @@ spec:
         command:
         - sleep
         - infinity
-        resources:
-          claims:
-          - name: macvlan-eth0-attachment
       resourceClaims:
       - name: macvlan-eth0-attachment
         source:

@@ -9,20 +9,16 @@ featureGates:
 runtimeConfig:
   "networking.k8s.io/v1alpha1": true
   "resource.k8s.io/v1alpha2": true
-kubeadmConfigPatches:
-- |
-  apiVersion: kubelet.config.k8s.io/v1beta1
-  kind: KubeletConfiguration
-  logging:
-    verbosity: 10
 containerdConfigPatches:
 - |-
   [plugins."io.containerd.grpc.v1.cri"]
     enable_cdi = true
   [plugins.'io.containerd.grpc.v1.cri'.cni]
     disable_cni = true
+  [plugins."io.containerd.nri.v1.nri"]
+    disable = false
 nodes:
 - role: control-plane
-  image: kindest/node:cni-disabled
+  image: kindest/node:v1.30.0@sha256:047357ac0cfea04663786a612ba1eaba9702bef25227a794b52890dd8bcd692e
 - role: worker
-  image: kindest/node:cni-disabled
+  image: kindest/node:v1.30.0@sha256:047357ac0cfea04663786a612ba1eaba9702bef25227a794b52890dd8bcd692e

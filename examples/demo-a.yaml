@@ -6,21 +6,26 @@ metadata:
   namespace: default
 spec:
   config: '{
-        "cniVersion":"0.4.0",
-        "type":"macvlan",
-        "master":"eth0",
-        "mode":"bridge",
-        "ipam": {
-          "type": "host-local",
-          "ranges": [
-          	[
-            	{
-                "subnet": "10.10.1.0/24"
-              }
-            ]
+  "cniVersion": "1.0.0",
+  "name": "macvlan-eth0",
+  "plugins": [
+    {
+      "type": "macvlan",
+      "master": "eth0",
+      "mode": "bridge",
+      "ipam": {
+        "type": "host-local",
+        "ranges": [
+          [
+            {
+              "subnet": "10.10.1.0/24"
+            }
           ]
-        }
-    }'
+        ]
+      }
+    }
+  ]
+}'
 ---
 apiVersion: dra.networking/v1alpha1
 kind: NetworkAttachment
@@ -53,9 +58,6 @@ spec:
     command:
     - sleep
     - infinity
-    resources:
-      claims:
-      - name: macvlan-eth0-attachment
   resourceClaims:
   - name: macvlan-eth0-attachment
     source:
