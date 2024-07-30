@@ -2,7 +2,7 @@
 
 Example of a DRA integration with an NRI Plugin for calling CNIs on pod creation.
 
-This is a PoC (Proof Of Concept) about resource configuration. Kubernetes 1.30 is used.
+This is a PoC (Proof Of Concept) about resource configuration. Kubernetes 1.31 (17d7d286201ae4b8e60014d8d0c41792d741d969) is used.
 
 PoCs: 
 * [v0.0.1 - DRA with CDI Calling CNI with hardcoded CNI specs](https://github.com/LionelJouin/network-dra/tree/v0.0.1)
@@ -10,8 +10,10 @@ PoCs:
     * [Slides](https://docs.google.com/presentation/d/1wxR6vAMK2Wl--ZqjnOZDJtvtJHtQe0_OEJH_h2lp2TI/edit?usp=sharing)
     * [Recording](https://www.youtube.com/watch?v=GdGtEW3ZGHk)
 * [v0.1.1 - DRA with CDI callling CNI with CRD exposing CNI specs + default/primary network via DRA](https://github.com/LionelJouin/network-dra/tree/v0.1.1)
-* Current - DRA with NRI callling CNI with CRD exposing CNI specs
+* [v0.2.0 - DRA with NRI callling CNI with CRD exposing CNI specs](https://github.com/LionelJouin/network-dra/tree/v0.2.0)
     * [Slides](https://docs.google.com/presentation/d/1CdIexp2Kaf38ktxd-kg5vE4RxjyOjSMzH-P8kUuOxCQ/edit?usp=sharing)
+    * [Recording](https://www.youtube.com/watch?v=qNooLu7DWj4)
+* Current - DRA (Kubernetes v1.31) with NRI callling CNI with CRD exposing CNI specs
 
 ## Build
 
@@ -51,14 +53,14 @@ helm install network-dra deployments/network-DRA --set registry=localhost:5000/n
 Demo
 ```
 kubectl apply -f examples/demo-a.yaml
-kubectl apply -f examples/demo-b.yaml
+# kubectl apply -f examples/demo-b.yaml
 kubectl apply -f examples/demo-c.yaml
 ```
 
 - Demo A
     - Single Pod with a single resource claim.
     - The pod will receive the interface described in the `macvlan-eth0-attachment` resource claim parameter.
-- Demo B
+- Demo B (Does no longer work as expected since ResourceClaim.Status.Shareable has been removed)
     - Single Pod with a single resource claim (Resource claim used in demo-a).
     - The pod will be in pending state since the resource claim is already in use (by demo-a).
 - Demo C
@@ -108,8 +110,6 @@ kubectl apply -f examples/demo-c.yaml
 - DRA KEP: https://github.com/kubernetes/enhancements/blob/master/keps/sig-node/3063-dynamic-resource-allocation/README.md
 - DRA API: https://github.com/kubernetes/kubernetes/blob/v1.30.0/staging/src/k8s.io/kubelet/pkg/apis/dra/v1alpha3/api.proto#L34
 - DRA Controller: https://pkg.go.dev/k8s.io/dynamic-resource-allocation/controller
-- DRA Example: https://github.com/kubernetes-sigs/dra-example-driver
-- DRA Presentation: https://kccnceu2023.sched.com/event/1HyWy/device-plugins-20-how-to-build-a-driver-for-dynamic-resource-allocation-kevin-klues-nvidia-alexey-fomenko-intel
 - NRI: https://github.com/containerd/nri
 - NRI in Containerd: https://github.com/containerd/containerd/blob/v2.0.0-rc.2/docs/NRI.md
 - Network Device Injector NRI Plugin PR: https://github.com/containerd/nri/pull/82

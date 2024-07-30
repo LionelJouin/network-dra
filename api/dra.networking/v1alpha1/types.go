@@ -1,8 +1,8 @@
 package v1alpha1
 
 import (
-	netdefv1 "github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/apis/k8s.cni.cncf.io/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // +genclient
@@ -50,7 +50,9 @@ type NetworkAttachmentSpec struct {
 }
 
 // NetworkAttachmentStatus is the status for a NetworkAttachment resource.
-type NetworkAttachmentStatus struct{}
+type NetworkAttachmentStatus struct {
+	NetworkRepresentation runtime.RawExtension `json:"networkRepresentation" protobuf:"bytes,2,name=parameters"`
+}
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
@@ -60,9 +62,4 @@ type NetworkAttachmentList struct {
 	metav1.ListMeta `json:"metadata"`
 
 	Items []NetworkAttachment `json:"items"`
-}
-
-type ClaimParameter struct {
-	NetworkAttachment           *NetworkAttachment                    `json:"networkAttachment"`
-	NetworkAttachmentDefinition *netdefv1.NetworkAttachmentDefinition `json:"networkAttachmentDefinition"`
 }

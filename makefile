@@ -123,7 +123,7 @@ check: lint test ## Run the linter and the Unit tests.
 #############################################################################
 
 .PHONY: generate
-generate: gofmt manifests generate-controller generate-client generate-lister generate-informer ## Generate all.
+generate: gofmt generate-controller generate-client generate-lister generate-informer ## Generate all.
 
 .PHONY: gofmt
 gofmt: gofumpt ## Run gofumpt.

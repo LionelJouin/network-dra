@@ -6,9 +6,10 @@ networking:
   kubeProxyMode: ipvs
 featureGates:
   "DynamicResourceAllocation": true
+  "DRAControlPlaneController": true
 runtimeConfig:
   "networking.k8s.io/v1alpha1": true
-  "resource.k8s.io/v1alpha2": true
+  "resource.k8s.io/v1alpha3": true
 containerdConfigPatches:
 - |-
   [plugins."io.containerd.grpc.v1.cri"]
@@ -19,6 +20,6 @@ containerdConfigPatches:
     disable = false
 nodes:
 - role: control-plane
-  image: kindest/node:v1.30.0@sha256:047357ac0cfea04663786a612ba1eaba9702bef25227a794b52890dd8bcd692e
+  image: kindest/node:v1.31.0
 - role: worker
-  image: kindest/node:v1.30.0@sha256:047357ac0cfea04663786a612ba1eaba9702bef25227a794b52890dd8bcd692e
+  image: kindest/node:v1.31.0

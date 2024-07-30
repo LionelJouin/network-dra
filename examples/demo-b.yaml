@@ -13,5 +13,4 @@ spec:
     - infinity
   resourceClaims:
   - name: macvlan-eth0-attachment
-    source:
-      resourceClaimName: macvlan-eth0-attachment
+    resourceClaimName: macvlan-eth0-attachment
