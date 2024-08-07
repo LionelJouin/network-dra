@@ -13,7 +13,7 @@ help: ## Display this help.
 # Variables
 ############################################################################
 
-IMAGES ?= base-image network-dra-controller network-nri-plugin
+IMAGES ?= base-image network-dra-controller network-nri-plugin network-dra-plugin
 VERSION ?= latest
 
 GO_MOD := github.com/LionelJouin/network-dra
@@ -86,6 +86,10 @@ network-dra-controller: ## Build the network-dra-controller.
 .PHONY: network-nri-plugin
 network-nri-plugin: ## Build the network-nri-plugin.
 	IMAGE=network-nri-plugin $(MAKE) -s $(BUILD_STEPS)
+
+.PHONY: network-dra-plugin
+network-dra-plugin: ## Build the network-dra-plugin.
+	IMAGE=network-dra-plugin $(MAKE) -s $(BUILD_STEPS)
 
 #############################################################################
 ##@ Testing & Code check

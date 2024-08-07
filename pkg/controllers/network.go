@@ -55,7 +55,16 @@ func (dc *DriverController) allocate(ctx context.Context, claim *resourcev1alpha
 	}
 
 	allocationResult := &resourcev1alpha3.AllocationResult{
+		Controller: v1alpha1.GroupName,
 		Devices: resourcev1alpha3.DeviceAllocationResult{
+			Results: []resourcev1alpha3.DeviceRequestAllocationResult{
+				{
+					Request: claim.Spec.Devices.Requests[0].Name,
+					Driver:  v1alpha1.GroupName,
+					Pool:    "none",
+					Device:  "none",
+				},
+			},
 			Config: []resourcev1alpha3.DeviceAllocationConfiguration{
 				{
 					Source: resourcev1alpha3.AllocationConfigSourceClaim,
