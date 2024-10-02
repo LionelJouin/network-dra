@@ -1,54 +1,30 @@
----
-apiVersion: "k8s.cni.cncf.io/v1"
-kind: NetworkAttachmentDefinition
-metadata:
-  name: macvlan-eth0
-  namespace: default
-spec:
-  config: '{
-  "cniVersion": "1.0.0",
-  "name": "macvlan-eth0",
-  "plugins": [
-    {
-      "type": "macvlan",
-      "master": "eth0",
-      "mode": "bridge",
-      "ipam": {
-        "type": "host-local",
-        "ranges": [
-          [
-            {
-              "subnet": "10.10.1.0/24"
-            }
-          ]
-        ]
-      }
-    }
-  ]
-}'
----
 apiVersion: resource.k8s.io/v1alpha3
 kind: ResourceClaim
 metadata:
   name: macvlan-eth0-attachment
 spec:
-  devices: 
+  devices:
     requests:
-      - name: macvlan-eth0
-        deviceClassName: network-interface
-    config: 
-      - opaque: 
-          driver: dra.networking
-          parameters:
-            apiVersion: dra.networking/v1alpha1
-            kind: NetworkAttachment
-            metadata:
-              name: macvlan-eth0-attachment
-              namespace: default
-            spec:
-              name: macvlan-eth0
-              interface: net1
-  controller: dra.networking
+    - name: macvlan-eth0
+      deviceClassName: network-interface
+    config:
+    - requests:
+      - macvlan-eth0
+      opaque:
+        driver: poc.dra.networking
+        parameters:
+          interface: "net1"
+          config:
+            cniVersion: 1.0.0
+            name: macvlan-eth0
+            plugins:
+            - type: macvlan
+              master: eth0
+              mode: bridge
+              ipam:
+                type: host-local
+                ranges:
+                - - subnet: 10.10.1.0/24
 ---
 apiVersion: v1
 kind: Pod

@@ -6,7 +6,7 @@ networking:
   kubeProxyMode: ipvs
 featureGates:
   "DynamicResourceAllocation": true
-  "DRAControlPlaneController": true
+  "DRAResourceClaimDeviceStatus": true
 runtimeConfig:
   "networking.k8s.io/v1alpha1": true
   "resource.k8s.io/v1alpha3": true
@@ -20,6 +20,6 @@ containerdConfigPatches:
     disable = false
 nodes:
 - role: control-plane
-  image: kindest/node:v1.31.0
+  image: kindest/node:kep-4817
 - role: worker
-  image: kindest/node:v1.31.0
+  image: kindest/node:kep-4817

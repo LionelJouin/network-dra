@@ -7,7 +7,5 @@ rules:
 - apiGroups:
   - ""
   - resource.k8s.io
-  - dra.networking
-  - k8s.cni.cncf.io
   resources: ["*"]
   verbs: ["*"]

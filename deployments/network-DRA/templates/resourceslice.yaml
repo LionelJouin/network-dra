@@ -1,0 +1,17 @@
+---
+apiVersion: resource.k8s.io/v1alpha3
+kind: ResourceSlice
+metadata:
+  name: kind-worker-poc-dra-networking
+spec:
+  devices:
+  - name: cni
+    basic:
+      attributes:
+        name:
+          string: "eth0"
+  driver: poc.dra.networking
+  nodeName: kind-worker
+  pool:
+    name: kind-worker
+    resourceSliceCount: 1

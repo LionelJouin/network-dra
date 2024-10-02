@@ -5,21 +5,25 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/LionelJouin/network-dra/pkg/cni"
 	"github.com/LionelJouin/network-dra/pkg/nri"
-	"github.com/containerd/nri/pkg/api"
+	"github.com/LionelJouin/network-dra/pkg/status"
 	"github.com/containerd/nri/pkg/stub"
+	cniv1 "github.com/kubernetes-sigs/multi-network/pkg/cni/v1"
+	"github.com/kubernetes-sigs/multi-network/pkg/dra"
+	"github.com/kubernetes-sigs/multi-network/pkg/store"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
 
 type runOptions struct {
-	pluginName  string
-	pluginIndex string
-	CNIPath     string
-	CNICacheDir string
-	ChrootDir   string
+	pluginName    string
+	pluginIndex   string
+	CNIPath       string
+	CNICacheDir   string
+	ChrootDir     string
+	DRADriverName string
+	NodeName      string
 }
 
 func newCmdRun() *cobra.Command {
@@ -61,11 +65,26 @@ func newCmdRun() *cobra.Command {
 		"/var/lib/cni/nri-network",
 		"CNI Cache dir.",
 	)
+
 	cmd.Flags().StringVar(
 		&runOpts.ChrootDir,
 		"chroot-dir",
 		"/hostroot",
 		"ChrootDir.",
+	)
+
+	cmd.Flags().StringVar(
+		&runOpts.DRADriverName,
+		"dra-driver-name",
+		"poc.dra.networking",
+		"DRA Driver Name.",
+	)
+
+	cmd.Flags().StringVar(
+		&runOpts.NodeName,
+		"node-name",
+		"",
+		"Node Name.",
 	)
 
 	return cmd
@@ -89,24 +108,44 @@ func (ro *runOptions) run(ctx context.Context) {
 		os.Exit(1)
 	}
 
+	memoryStore := store.NewMemory()
+
+	draDriver, err := dra.Start(
+		ctx,
+		ro.DRADriverName,
+		ro.NodeName,
+		clientset,
+		memoryStore,
+	)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to dra.Start: %v\n", err)
+		os.Exit(1)
+	}
+	defer draDriver.Stop()
+
+	cnish := status.CNIStatusHandler{
+		ClientSet: clientset,
+	}
+
+	cni := cniv1.New(
+		ro.DRADriverName,
+		ro.ChrootDir,
+		[]string{ro.CNIPath},
+		ro.CNICacheDir,
+		cnish.UpdateStatus,
+		memoryStore,
+	)
+
 	p := &nri.Plugin{
 		ClientSet: clientset,
-		Exec: &cni.ChrootExec{
-			Stderr:    os.Stderr,
-			ChrootDir: ro.ChrootDir,
-		},
-		CNIPath:     []string{ro.CNIPath},
-		CNICacheDir: ro.CNICacheDir,
+		CNI:       cni,
 	}
 
 	p.Stub, err = stub.New(p, opts...)
-
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create plugin stub: %v\n", err)
 		os.Exit(1)
 	}
-
-	p.Stub.UpdateContainers([]*api.ContainerUpdate{})
 
 	err = p.Stub.Run(ctx)
 	if err != nil {
